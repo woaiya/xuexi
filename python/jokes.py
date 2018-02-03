@@ -12,6 +12,27 @@ import time
 import xlwt
 import requests
 from bs4 import BeautifulSoup
+import pymysql
+
+
+class Database:
+    connect = pymysql.Connect(
+        host='localhost',
+        port=3610,
+        user='root',
+        passwd='******',
+        db='python',
+        charset='utf8'
+    )
+    cursor = connect.cursor()
+
+    # jokes表添加数据方法
+    def add_data_jokes(self, *data):
+        sql = "INSERT INTO jokes (jokes_nickname,jokes_content,jokes_funny,jokes_comment,jokes_type) " \
+              "VALUE ('%s','%s',%d,%d,%d)" % (data[0], data[1], data[2], data[3], data[4])
+        self.cursor.execute(sql)
+        self.connect.commit()
+        print("添加成功")
 
 
 class QShiBaiKe:
@@ -24,6 +45,7 @@ class QShiBaiKe:
 
     def __init__(self, url_number=5):
         self.url_number = url_number
+        self.database = Database()
 
     # 生成url方法
     def return_url(self, page):
@@ -72,6 +94,22 @@ class QShiBaiKe:
                 sheet1.write(i, op-1, self.jokes_list[i-1][op-1])
         f.save("jokes.xls")
 
+    # 写入数据库
+    def save_database(self):
+        print(self.jokes_list)
+        number = len(self.jokes_list)
+        for i in range(0, number):
+            jokes_nickname = self.jokes_list[i][1]
+            jokes_content = self.jokes_list[i][3]
+            jokes_funny = self.jokes_list[i][4]
+            jokes_comment = self.jokes_list[i][5]
+            j_type = self.jokes_list[i][6]
+            if j_type == 'typs_long':
+                jokes_type = 0
+            else:
+                jokes_type = 1
+            self.database.add_data_jokes(jokes_nickname, jokes_content, int(jokes_funny), int(jokes_comment), int(jokes_type))
+
     # 主函数
     def main(self):
         start_time = time.time()
@@ -80,7 +118,8 @@ class QShiBaiKe:
             url = self.return_url(i)
             self.qRequest(url)
             print("第%s页爬取完毕" % i)
-        self.save()
+        self.save_database()
+        # self.save()
         print(time.time()-start_time)
 
 
